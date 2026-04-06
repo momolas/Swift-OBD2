@@ -25,8 +25,11 @@ struct MockECUSettings {
 class MOCKComm: CommProtocol {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.example.app", category: "MOCKComm")
 
-    @Published var connectionState: ConnectionState = .disconnected
-    var connectionStatePublisher: Published<ConnectionState>.Publisher { $connectionState }
+    var connectionState: ConnectionState = .disconnected {
+        didSet {
+            obdDelegate?.connectionStateChanged(state: connectionState)
+        }
+    }
     var obdDelegate: OBDServiceDelegate?
 
     var ecuSettings: MockECUSettings = .init()
@@ -382,8 +385,7 @@ extension OBDCommand {
         }
     }
 }
-//        case .O902: return  "10 14 49 02 01 31 4E 34 \r\n"
-//            + header + "21 41 4C 33 41 50 37 44 \r\n" + header + "22 43 31 39 39 35 38 33 \r\n\r\n>"
+
 extension String {
     func chunked(by chunkSize: Int) -> Array<String> {
         return stride(from: 0, to: self.count, by: chunkSize).map {

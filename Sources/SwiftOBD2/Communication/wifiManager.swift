@@ -10,28 +10,21 @@ import Foundation
 import Network
 import OSLog
 
-protocol CommProtocol {
-    func sendCommand(_ command: String, retries: Int) async throws -> [String]
-    func disconnectPeripheral()
-    func connectAsync(timeout: TimeInterval, peripheral: CBPeripheral?) async throws
-    func scanForPeripherals() async throws
-    var connectionStatePublisher: Published<ConnectionState>.Publisher { get }
-    var obdDelegate: OBDServiceDelegate? { get set }
-}
-
 enum CommunicationError: Error {
     case invalidData
     case errorOccurred(Error)
 }
 
 class WifiManager: CommProtocol {
-    @Published var connectionState: ConnectionState = .disconnected
+    var connectionState: ConnectionState = .disconnected {
+        didSet {
+            obdDelegate?.connectionStateChanged(state: connectionState)
+        }
+    }
 
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.example.app", category: "wifiManager")
 
     var obdDelegate: OBDServiceDelegate?
-
-    var connectionStatePublisher: Published<ConnectionState>.Publisher { $connectionState }
 
     var tcp: NWConnection?
 

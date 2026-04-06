@@ -7,8 +7,6 @@ import OSLog
 protocol BLEConnectionProtocol {
     var connectionState: ConnectionState { get }
     var connectedPeripheral: CBPeripheral? { get }
-    var connectedPeripheralPublisher: AnyPublisher<CBPeripheral?, Never> { get }
-    var connectionStatePublisher: AnyPublisher<ConnectionState, Never> { get }
 
     func connect(to peripheral: CBPeripheral, timeout: TimeInterval) async throws
     func disconnect()
@@ -24,8 +22,8 @@ class BLEConnection: NSObject, BLEConnectionProtocol {
     private weak var centralManager: CBCentralManager?
     private let supportedServices: [CBUUID]
 
-    @Published private(set) var connectionState: ConnectionState = .disconnected
-    @Published private(set) var connectedPeripheral: CBPeripheral?
+    private(set) var connectionState: ConnectionState = .disconnected
+    private(set) var connectedPeripheral: CBPeripheral?
 
     // Characteristics for OBD communication
     var ecuReadCharacteristic: CBCharacteristic?
@@ -34,16 +32,6 @@ class BLEConnection: NSObject, BLEConnectionProtocol {
     // Connection management
     private var connectionCompletion: ((CBPeripheral?, Error?) -> Void)?
     private var connectionTimeout: Task<Void, Never>?
-
-    // MARK: - Publishers
-
-    var connectionStatePublisher: AnyPublisher<ConnectionState, Never> {
-        $connectionState.eraseToAnyPublisher()
-    }
-
-    var connectedPeripheralPublisher: AnyPublisher<CBPeripheral?, Never> {
-        $connectedPeripheral.eraseToAnyPublisher()
-    }
 
     // MARK: - Initialization
 
@@ -168,18 +156,6 @@ class BLEConnection: NSObject, BLEConnectionProtocol {
 
         // Start service discovery with timeout
         peripheral.discoverServices(supportedServices)
-
-//        // Set up a timeout for service discovery
-//        connectionTimeout = Task { [weak self] in
-//            try? await Task.sleep(for: .seconds(5)) // 5 second timeout for service discovery
-//            await MainActor.run {
-//                if self?.connectionCompletion != nil {
-//                    self?.logger.warning("Service discovery timed out, but connection may still be usable")
-//                    // Complete connection even if not all characteristics found
-//                    self?.connectionCompletion?(peripheral, nil)
-//                }
-//            }
-//        }
 
         // Save last connected peripheral
         UserDefaults.standard.set(peripheral.identifier.uuidString, forKey: "lastConnectedPeripheral")
