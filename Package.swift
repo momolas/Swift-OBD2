@@ -19,10 +19,6 @@ let package = Package(
     targets: [
         .target(
             name: "Swift-OBD2"
-        ),
-        .testTarget(
-            name: "Swift-OBD2Tests",
-            dependencies: ["Swift-OBD2"]
         )
     ]
 )
