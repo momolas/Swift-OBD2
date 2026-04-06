@@ -12,17 +12,17 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "SwiftOBD2",
-            targets: ["SwiftOBD2"]
+            name: "Swift-OBD2",
+            targets: ["Swift-OBD2"]
         )
     ],
     targets: [
         .target(
-            name: "SwiftOBD2"
+            name: "Swift-OBD2"
         ),
         .testTarget(
-            name: "SwiftOBD2Tests",
-            dependencies: ["SwiftOBD2"]
+            name: "Swift-OBD2Tests",
+            dependencies: ["Swift-OBD2"]
         )
     ]
 )
