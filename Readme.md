@@ -57,9 +57,9 @@ Speed: 65.0
 
 ### Requirements
 
-- iOS 14.0+ / macOS 11.0+
-- Xcode 13.0+
-- Swift 5.0+
+- iOS 18.0+ / macOS 12.0+
+- Xcode 16.0+
+- Swift 6.0+
 
 ### Key Features
 
@@ -119,8 +119,8 @@ Speed: 65.0
         
 ### Key Concepts
 
-* SwiftUI & Combine: Your code leverages the SwiftUI framework for building the user interface and Combine for reactive handling of updates from the OBDService.
-* OBDService: This is the core class within the SwiftOBD2 package. It handles communication with the OBD-II adapter and processes data from the vehicle.
+* SwiftUI & Concurrency: Your code leverages the SwiftUI framework for building the user interface and modern Swift Concurrency (async/await, AsyncStreams) for handling updates from the OBDService.
+* OBDService: This is the core class within the SwiftOBD2 package. It handles communication with the OBD-II adapter and processes data from the vehicle. It uses the `@Observable` macro to notify the UI of state changes.
 * OBDServiceDelegate: This protocol is crucial for receiving updates about the connection state and other events from the OBDService.
 * OBDCommand: These represent specific requests you can make to the vehicle's ECU (Engine Control Unit) for data.
 
@@ -130,16 +130,16 @@ Speed: 65.0
     * Begin by importing the necessary modules:
 
 
-```Swift
+```swift
 import SwiftUI
 import SwiftOBD2
 import Combine
 ```
 
 2. ViewModel
-    * Create a ViewModel class that conforms to the ObservableObject protocol. This allows your SwiftUI views to observe changes in the ViewModel.
+    * Create a ViewModel class annotated with `@Observable` and `@MainActor`. This allows your SwiftUI views to observe changes in the ViewModel while respecting modern Swift concurrency rules.
     * Inside the ViewModel:
-        * Define a @Published property measurements to store the collected data.
+        * Define properties (e.g., `measurements`) to store the collected data.
         * Initialize an OBDService instance, setting the desired connection type (e.g., Bluetooth, Wi-Fi).
 
 3. Connection Handling
@@ -161,33 +161,37 @@ import Combine
     * Can also add PIDs to the continuous updates using the addPID method.
     
 ### Code Example
-```Swift
-class ViewModel: ObservableObject {
-    @Published var measurements: [OBDCommand: MeasurementResult] = [:]
-    @Published var connectionState: ConnectionState = .disconnected
+```swift
+@Observable
+@MainActor
+class ViewModel {
+    var measurements: [OBDCommand: MeasurementResult] = [:]
 
-    var cancellables = Set<AnyCancellable>()
     var requestingPIDs: [OBDCommand] = [.mode1(.rpm)] {
         didSet {
-            addPID(command: requestingPIDs[-1])
+            if let lastPID = requestingPIDs.last {
+                addPID(command: lastPID)
+            }
         }
     }
     
-    init() {
-        obdService.$connectionState
-            .assign(to: &$connectionState)
+    let obdService = OBDService(connectionType: .bluetooth)
+    var connectionState: ConnectionState {
+        obdService.connectionState
     }
 
-    let obdService = OBDService(connectionType: .bluetooth)
+    private var updateTask: Task<Void, Never>?
 
-    func startContinousUpdates() {
-        obdService.startContinuousUpdates([.mode1(.rpm)]) // You can add more PIDs
-            .sink { completion in
-                print(completion)
-            } receiveValue: { measurements in
-                self.measurements = measurements
+    func startContinuousUpdates() {
+        updateTask = Task {
+            do {
+                for try await result in obdService.startContinuousUpdates([.mode1(.rpm)]).values {
+                    self.measurements = result
+                }
+            } catch {
+                print("Error receiving updates: \(error)")
             }
-            .store(in: &cancellables)
+        }
     }
 
     func addPID(command: OBDCommand) {
@@ -195,10 +199,11 @@ class ViewModel: ObservableObject {
     }
 
     func stopContinuousUpdates() {
-        cancellables.removeAll()
+        updateTask?.cancel()
+        updateTask = nil
     }
 
-    func startConnection() async throws  {
+    func startConnection() async throws {
         let obd2info = try await obdService.startConnection(preferedProtocol: .protocol6)
         print(obd2info)
     }
@@ -208,33 +213,44 @@ class ViewModel: ObservableObject {
     }
 
     func switchConnectionType() {
-        obdService.switchConnectionType(.wifi)
+        obdService.connectionType = .wifi
     }
 
     func getStatus() async {
-        let status = try? await obdService.getStatus()
-        print(status ?? "nil")
+        if let status = try? await obdService.getStatus() {
+            print(status)
+        } else {
+            print("nil")
+        }
     }
 
     func getTroubleCodes() async {
-        let troubleCodes = try? await obdService.scanForTroubleCodes()
-        print(troubleCodes ?? "nil")
+        if let troubleCodes = try? await obdService.scanForTroubleCodes() {
+            print(troubleCodes)
+        } else {
+            print("nil")
+        }
     }
 }
 
 struct ContentView: View {
-    @ObservedObject var viewModel = ViewModel()
+    @State private var viewModel = ViewModel()
+
     var body: some View {
         VStack(spacing: 20) {
             Text("Connection State: \(viewModel.connectionState.rawValue)")
             ForEach(viewModel.requestingPIDs, id: \.self) { pid in
-                Text("\(pid.properties.description): \(viewModel.measurements[pid]?.value ?? 0) \(viewModel.measurements[pid]?.unit.symbol ?? "")")
+                if let measurement = viewModel.measurements[pid] {
+                    Text("\(pid.properties.description): \(measurement.value.formatted()) \(measurement.unit.symbol)")
+                } else {
+                    Text("\(pid.properties.description): 0")
+                }
             }
             Button("Connect") {
                 Task {
                     do {
                         try await viewModel.startConnection()
-                        viewModel.startContinousUpdates()
+                        viewModel.startContinuousUpdates()
                     } catch {
                         print(error)
                     }
@@ -254,7 +270,6 @@ struct ContentView: View {
         .padding()
     }
 }
-
 ```
 
 ### Supported OBD2 Commands
