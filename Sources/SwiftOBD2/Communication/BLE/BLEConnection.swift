@@ -171,7 +171,7 @@ class BLEConnection: NSObject, BLEConnectionProtocol {
 
 //        // Set up a timeout for service discovery
 //        connectionTimeout = Task { [weak self] in
-//            try? await Task.sleep(nanoseconds: UInt64(5.0 * 1_000_000_000)) // 5 second timeout for service discovery
+//            try? await Task.sleep(for: .seconds(5)) // 5 second timeout for service discovery
 //            await MainActor.run {
 //                if self?.connectionCompletion != nil {
 //                    self?.logger.warning("Service discovery timed out, but connection may still be usable")

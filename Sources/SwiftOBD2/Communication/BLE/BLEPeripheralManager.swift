@@ -7,12 +7,12 @@ protocol BLEPeripheralManagerDelegate: AnyObject {
     func peripheralManager(_ manager: BLEPeripheralManager, didSetupCharacteristics peripheral: CBPeripheral)
 }
 
-class BLEPeripheralManager: NSObject, ObservableObject {
+@Observable @MainActor class BLEPeripheralManager: NSObject {
     func didWriteValue(_ peripheral: CBPeripheral, descriptor: CBDescriptor, error: (any Error)?) {
 
     }
 
-    @Published var connectedPeripheral: CBPeripheral?
+    var connectedPeripheral: CBPeripheral?
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.example.app", category: "BLEPeripheralManager")
     private let characteristicHandler: BLECharacteristicHandler
 

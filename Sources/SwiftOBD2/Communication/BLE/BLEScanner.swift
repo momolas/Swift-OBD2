@@ -14,8 +14,8 @@ protocol BLEScannerProtocol {
 }
 
 /// Focused component responsible for BLE device discovery and peripheral management
-class BLEPeripheralScanner: ObservableObject {
-    @Published var foundPeripherals: [CBPeripheral] = []
+@Observable @MainActor class BLEPeripheralScanner {
+    var foundPeripherals: [CBPeripheral] = []
 
     private let peripheralSubject = PassthroughSubject<CBPeripheral, Never>()
 
@@ -112,7 +112,7 @@ func withTimeout<R>(
 
         group.addTask {
             if seconds > 0 {
-                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                try await Task.sleep(for: .seconds(seconds))
             }
             try Task.checkCancellation()
 

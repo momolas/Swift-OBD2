@@ -163,7 +163,7 @@ class ELM327 {
     /// - Throws: Various setup-related errors.
     private func detectProtocolAutomatically() async throws -> PROTOCOL {
         _ = try await okResponse("ATSP0")
-        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        try? await Task.sleep(for: .seconds(1))
         _ = try await sendCommand("0100")
 
         let obdProtocolNumber = try await sendCommand("ATDPN")
@@ -326,9 +326,8 @@ class ELM327 {
         }
 
         vinString = vinString
-            .replacingOccurrences(of: "[^a-zA-Z0-9]",
-                                  with: "",
-                                  options: .regularExpression)
+            .replacing(/[^a-zA-Z0-9]/,
+                                  with: "")
 
         return vinString
     }
@@ -443,7 +442,7 @@ extension ELM327 {
 
         for (index, value) in binaryData.enumerated() {
             if value == 1 {
-                let pid = String(format: "%02X", index + 1)
+                let pid = String(hex2: index + 1)
                 supportedPIDs.insert(pid)
             }
         }
@@ -466,7 +465,7 @@ struct BatchedResponse {
         let valueData = response.prefix(size)
 
         response.removeFirst(size)
-        //        print("Buffer: \(buffer.compactMap { String(format: "%02X ", $0) }.joined())")
+        //        print("Buffer: \(buffer.compactMap { String(hex2: $0) + " " }.joined())")
         let result = cmd.properties.decode(data: valueData, unit: unit)
 
         
@@ -475,7 +474,7 @@ struct BatchedResponse {
         case let .success(measurementResult):
             return measurementResult.measurementResult
         case let .failure(error):
-            obdError("Failed to decode command \(cmd.properties.command): \(error.localizedDescription) | Data: \(valueData.map { String(format: "%02X", $0) }.joined(separator: " "))", category: .parsing)
+            obdError("Failed to decode command \(cmd.properties.command): \(error.localizedDescription) | Data: \(valueData.map { String(hex2: $0) }.joined(separator: " "))", category: .parsing)
             return nil
         }
     }
