@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "SwiftOBD2",
     platforms: [
-        .iOS(.v14),
+        .iOS(.v16),
         .macOS(.v12)
     ],
     products: [
