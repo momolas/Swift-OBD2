@@ -181,7 +181,7 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         connectionState = .connecting
         OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
         
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.obdDelegate?.connectionStateChanged(state: .connecting)
         }
         
@@ -206,7 +206,7 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         connectionState = .error
         OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
         
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.obdDelegate?.connectionStateChanged(state: .error)
         }
     }
@@ -262,7 +262,7 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
         
         // Dispatch delegate call to main queue since it might update UI
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.obdDelegate?.connectionStateChanged(state: .connectedToAdapter)
         }
         
@@ -294,7 +294,7 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
                 break
             }
             
-            try await Task.sleep(nanoseconds: BLEConstants.pollingInterval)
+            try await Task.sleep(for: .nanoseconds(BLEConstants.pollingInterval))
         }
         
         obdDebug("Bluetooth powered on successfully", category: .bluetooth)
@@ -333,7 +333,7 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
 
     func scanForPeripherals() async throws {
         startScanning(nil)
-        try await Task.sleep(nanoseconds: UInt64(BLEConstants.scanDuration * 1_000_000_000))
+        try await Task.sleep(for: .seconds(BLEConstants.scanDuration))
         stopScan()
     }
 
@@ -345,7 +345,7 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         if oldState != connectionState {
             OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
             
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.obdDelegate?.connectionStateChanged(state: .disconnected)
             }
         }

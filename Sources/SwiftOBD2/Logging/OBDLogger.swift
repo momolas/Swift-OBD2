@@ -108,14 +108,14 @@ public class OBDLogger {
             message += " | Data: \(data)"
         }
         if let duration = duration {
-            message += " | Duration: \(String(format: "%.3f", duration))s"
+            message += " | Duration: \(duration.formatted(.number.precision(.fractionLength(3))))s"
         }
         info(message, category: .communication)
     }
     
     /// Log parsing errors with context
     public func logParseError(_ errorMessage: String, data: Data, expectedFormat: String? = nil) {
-        let hexData = data.map { String(format: "%02X", $0) }.joined(separator: " ")
+        let hexData = data.map { String(hex2: $0) }.joined(separator: " ")
         var message = "Parse error: \(errorMessage) | Data: \(hexData)"
         if let format = expectedFormat {
             message += " | Expected: \(format)"
@@ -126,7 +126,7 @@ public class OBDLogger {
     /// Log performance metrics
     public func logPerformance(_ operation: String, duration: TimeInterval, success: Bool = true) {
         let status = success ? "✓" : "✗"
-        info("\(status) \(operation): \(String(format: "%.3f", duration))s", category: .performance)
+        info("\(status) \(operation): \(duration.formatted(.number.precision(.fractionLength(3))))s", category: .performance)
     }
     
     /// Log Bluetooth specific events (deprecated - use direct obdInfo/obdDebug instead)

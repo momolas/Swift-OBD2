@@ -80,7 +80,7 @@ class WifiManager: CommProtocol {
                     return lines
                 } else if attempt < retries {
                     logger.info("No data received, retrying attempt \(attempt + 1) of \(retries)...")
-                    try await Task.sleep(nanoseconds: 100_000_000) // 0.5 seconds delay
+                    try await Task.sleep(for: .milliseconds(100)) // 0.5 seconds delay
                 }
             } catch {
                 if attempt == retries {

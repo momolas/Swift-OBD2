@@ -22,9 +22,9 @@ public struct Vehicle: Codable, Identifiable, Equatable, Hashable {
     public var obdinfo: OBDInfo?
 }
 
-public class Garage: ObservableObject {
-    @Published public var garageVehicles: [Vehicle] = []
-    @Published public var currentVehicle: Vehicle? {
+@Observable @MainActor public class Garage {
+    public var garageVehicles: [Vehicle] = []
+    public var currentVehicle: Vehicle? {
         didSet {
             if let currentVehicle = currentVehicle {
                 currentVehicleId = currentVehicle.id

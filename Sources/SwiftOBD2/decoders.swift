@@ -349,7 +349,7 @@ struct MonitorDecoder: Decoder {
         // look at data in blocks of 9 bytes (one test result)
         for i in stride(from: 0, to: databytes.count, by: 9) {
             let subdata = databytes.subdata(in: i ..< i + 9)
-            //        print("\nSubdata: ", subdata.compactMap {String(format: "%02x", $0)})
+            //        print("\nSubdata: ", subdata.compactMap {String(hex2: $0)})
             let test = parse_monitor_test(subdata)
             if let test = test, let tid = test.tid {
                 //            print(test.name ?? "")
@@ -374,13 +374,13 @@ struct MonitorDecoder: Decoder {
             test.name = testInfo.0
             test.desc = testInfo.1
         } else {
-            obdWarning("Unknown Test ID encountered: \(String(format: "%02x", tid))", category: .parsing)
-            test.name = "TID: $\(String(format: "%02x", tid)) CID: $\(String(format: "%02x", cid))"
+            obdWarning("Unknown Test ID encountered: \(String(hex2: tid))", category: .parsing)
+            test.name = "TID: $\(String(hex2: tid)) CID: $\(String(hex2: cid))"
             test.desc = "Unknown"
         }
 
         guard let uas = uasIDS[cid] else {
-            obdWarning("Unknown Units and Scaling ID: \(String(format: "%02x", cid))", category: .parsing)
+            obdWarning("Unknown Units and Scaling ID: \(String(hex2: cid))", category: .parsing)
             return nil
         }
 
@@ -686,9 +686,8 @@ struct StringDecoder: Decoder {
         }
 
         string = string
-            .replacingOccurrences(of: "[^a-zA-Z0-9]",
-                                  with: "",
-                                  options: .regularExpression)
+            .replacing(/[^a-zA-Z0-9]/,
+                                  with: "")
 
         return .success(.stringResult(string))
     }
@@ -766,7 +765,9 @@ func parseDTC(_ data: Data) -> TroubleCode? {
     // DTC:    C0123
     var dtc = ["P", "C", "B", "U"][Int(first) >> 6] // the last 2 bits of the first byte
     dtc += String((first >> 4) & 0b0011) // the next pair of 2 bits. Mask off the bits we read above
-    dtc += String(format: "%04X", (UInt16(first) & 0x3F) << 8 | UInt16(second)).dropFirst()
+    var hexStr = String((UInt16(first) & 0x3F) << 8 | UInt16(second), radix: 16, uppercase: true)
+    while hexStr.count < 4 { hexStr = "0" + hexStr }
+    dtc += hexStr.dropFirst()
     // pull description from the DTCs array
 
     return TroubleCode(code: dtc, description: codes[dtc] ?? "No description available.")

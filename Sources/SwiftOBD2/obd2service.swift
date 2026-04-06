@@ -42,11 +42,11 @@ public class ConfigurationService {
 ///   - Sending and receiving OBD2 commands.
 ///   - Providing information about the vehicle.
 ///   - Managing the connection state.
-public class OBDService: ObservableObject, OBDServiceDelegate {
-    @Published public private(set) var connectionState: ConnectionState = .disconnected
-    @Published public private(set) var isScanning: Bool = false
-    @Published public private(set) var connectedPeripheral: CBPeripheral?
-    @Published public var connectionType: ConnectionType {
+@Observable @MainActor public class OBDService: OBDServiceDelegate {
+    public private(set) var connectionState: ConnectionState = .disconnected
+    public private(set) var isScanning: Bool = false
+    public private(set) var connectedPeripheral: CBPeripheral?
+    public var connectionType: ConnectionType {
         didSet {
             switchConnectionType(connectionType)
             ConfigurationService.shared.connectionType = connectionType
@@ -84,7 +84,7 @@ public class OBDService: ObservableObject, OBDServiceDelegate {
     // MARK: - Connection Handling
 
     public func connectionStateChanged(state: ConnectionState) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             let oldState = self.connectionState
             self.connectionState = state
             if oldState != state {

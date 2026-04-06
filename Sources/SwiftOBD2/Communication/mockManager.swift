@@ -63,14 +63,14 @@ class MOCKComm: CommProtocol {
 
                 var Totallength = 0
 
-                let ffLength = ff.replacingOccurrences(of: " ", with: "").count / 2
+                let ffLength = ff.replacing( " ", with: "").count / 2
 
                 Totallength += ffLength
 
                 var cf = Array(chunks.dropFirst())
-                Totallength += cf.joined().replacingOccurrences(of: " ", with: "").count
+                Totallength += cf.joined().replacing( " ", with: "").count
 
-                var lengthHex = String(format: "%02X", Totallength - 1)
+                var lengthHex = String(hex2: Totallength - 1)
 
                 if lengthHex.count % 2 != 0 {
                     lengthHex = "0" + lengthHex
@@ -82,7 +82,7 @@ class MOCKComm: CommProtocol {
                 var assembledFrame: [String] = [ff]
                 var cfCount = 33
                 for i in 0..<cf.count {
-                    let length = String(format: "%02X", cfCount)
+                    let length = String(hex2: cfCount)
                     cfCount += 1
                     cf[i] = length + " " + cf[i]
                     assembledFrame.append(cf[i])
@@ -100,7 +100,7 @@ class MOCKComm: CommProtocol {
                 }
                 return assembledFrame.map { String($0) }
             } else {
-                let lengthHex = String(format: "%02X", response.count / 3)
+                let lengthHex = String(hex2: response.count / 3)
                 response = header + " " + lengthHex + " "  + String(mode) + " " + response
                 while response.count < 28 {
                     response.append("00 ")
@@ -160,7 +160,7 @@ class MOCKComm: CommProtocol {
             }
             let mode = "43"
             response = mode + " " + response
-            let length = String(format: "%02X", response.count / 3 + 1)
+            let length = String(hex2: response.count / 3 + 1)
             response = header + " " + length + " " + response
             while response.count < 26 {
                 response.append(" 00")
@@ -220,57 +220,57 @@ extension OBDCommand {
                     let A = decimalRep / 256
                     let B = decimalRep % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
 
                     return "0C" + " " + hexA + " " + hexB
                 case .speed:
-                    let hexSpeed = String(format: "%02X", Int.random(in: 0...100))
+                    let hexSpeed = String(hex2: Int.random(in: 0...100))
                     return "0D" + " " + hexSpeed
                 case .coolantTemp:
                   let temp = Int.random(in: 50...150) + 40
-                 let hexTemp = String(format: "%02X", temp)
+                 let hexTemp = String(hex2: temp)
                  return "05" + " " + hexTemp
                 case .maf:
                     let maf = Int.random(in: 0...655) * 100
                     let A = maf / 256
                     let B = maf % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
 
                     return "10" + " " + hexA + " " + hexB
                 case .engineLoad:
                     let load = Int.random(in: 0...100)
-                    let hexLoad = String(format: "%02X", load)
+                    let hexLoad = String(hex2: load)
                     return "04" + " " + hexLoad
                 case .throttlePos:
                     let pos = Int.random(in: 0...100)
-                    let hexPos = String(format: "%02X", pos)
+                    let hexPos = String(hex2: pos)
                     return "11" + " " + hexPos
                 case .fuelLevel:
                     let level = Int.random(in: 0...100)
-                    let hexLevel = String(format: "%02X", Double(level) * 2.55)
+                    let hexLevel = String(hex2: Int(Double(level) * 2.55))
                     return "2F" + " " + hexLevel
                 case .fuelPressure:
                     let pressure = Int.random(in: 0...765)
-                    let hexPressure = String(format: "%02X", pressure / 3)
+                    let hexPressure = String(hex2: pressure / 3)
                     return "0A" + " " + hexPressure
                 case .intakeTemp:
                     let temp = Int.random(in: 0...100) + 40
-                    let hexTemp = String(format: "%02X", temp)
+                    let hexTemp = String(hex2: temp)
                     return "0F" + " " + hexTemp
                 case .timingAdvance:
                     let advance = Int.random(in: 0...100)
-                    let hexAdvance = String(format: "%02X", advance / 2)
+                    let hexAdvance = String(hex2: advance / 2)
                     return "0E" + " " + hexAdvance
                 case .intakePressure:
                     let pressure = Int.random(in: 0...255)
-                    let hexPressure = String(format: "%02X", pressure)
+                    let hexPressure = String(hex2: pressure)
                     return "0B" + " " + hexPressure
                 case .barometricPressure:
                     let pressure = Int.random(in: 0...255)
-                    let hexPressure = String(format: "%02X", pressure)
+                    let hexPressure = String(hex2: pressure)
                     return "33" + " " + hexPressure
                 case .fuelType:
                     return "01 01"
@@ -279,32 +279,32 @@ extension OBDCommand {
                     let A = pressure / 256
                     let B = pressure % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
                     return "23" + " " + hexA + " " + hexB
                 case .ethanoPercent:
                     let fuel = Int.random(in: 0...100)
-                    let hexFuel = String(format: "%02X", fuel)
+                    let hexFuel = String(hex2: fuel)
                     return "52" + " " + hexFuel
                 case .engineOilTemp:
                     let temp = Int.random(in: 0...100) + 40
-                    let hexTemp = String(format: "%02X", temp)
+                    let hexTemp = String(hex2: temp)
                     return "5C" + " " + hexTemp
                 case .fuelInjectionTiming:
                     let timing = Int.random(in: 0...655) * 100
                     let A = timing / 256
                     let B = timing % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
                     return "5D" + " " + hexA + " " + hexB
                 case .fuelRate:
                     let rate = Int.random(in: 3...120)
                     let A = rate / 256
                     let B = rate % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
                     return "5E" + " " + hexA + " " + hexB
                 case .emissionsReq:
                     return "01 01"
@@ -313,8 +313,8 @@ extension OBDCommand {
                     let A = runtime / 256
                     let B = runtime % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
                     return "1F" + " " + hexA + " " + hexB
                 case .distanceSinceDTCCleared:
                     let distance = Int.random(in: 100...6550)
@@ -322,8 +322,8 @@ extension OBDCommand {
                     let A = distance / 256
                     let B = distance % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
                     return "31" + " " + hexA + " " + hexB
                 case .distanceWMIL:
 
@@ -331,12 +331,12 @@ extension OBDCommand {
                     let A = distance / 256
                     let B = distance % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
                     return "21" + " " + hexA + " " + hexB
                 case .warmUpsSinceDTCCleared:
                     let warmUp = Int.random(in: 0...40)
-                    let hexWarmUp = String(format: "%02X", warmUp)
+                    let hexWarmUp = String(hex2: warmUp)
                     return "30" + " 00 00 " + hexWarmUp
                 case .hybridBatteryLife:
                     let life = Int.random(in: 100...65500)
@@ -344,8 +344,8 @@ extension OBDCommand {
                     let A = life / 256
                     let B = life % 256
 
-                    let hexA = String(format: "%02X", A)
-                    let hexB = String(format: "%02X", B)
+                    let hexA = String(hex2: A)
+                    let hexB = String(hex2: B)
                     return "5B" + " " + hexA + " " + hexB
                 default:
                     return nil
