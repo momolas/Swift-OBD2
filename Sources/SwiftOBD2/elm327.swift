@@ -57,8 +57,6 @@ class ELM327 {
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.example.com", category: "ELM327")
     private var comm: CommProtocol
 
-    private var cancellables = Set<AnyCancellable>()
-
     weak var obdDelegate: OBDServiceDelegate? {
         didSet {
             comm.obdDelegate = obdDelegate
@@ -67,26 +65,13 @@ class ELM327 {
 
     private var r100: [String] = []
 
-    var connectionState: ConnectionState = .disconnected {
-        didSet {
-            obdDelegate?.connectionStateChanged(state: connectionState)
-        }
+    var connectionState: ConnectionState {
+        get { comm.connectionState }
+        set { comm.connectionState = newValue }
     }
 
     init(comm: CommProtocol) {
         self.comm = comm
-        setupConnectionStateSubscriber()
-    }
-
-    private func setupConnectionStateSubscriber() {
-        comm.connectionStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                self?.connectionState = state
-                self?.obdDelegate?.connectionStateChanged(state: state)
-                self?.logger.debug("Connection state updated: \(state.hashValue)")
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Adapter and Vehicle Setup

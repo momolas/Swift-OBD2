@@ -64,10 +64,12 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
 
     // MARK: Properties
 
-    @Published var connectionState: ConnectionState = .disconnected
-
-    var connectionStatePublisher: Published<ConnectionState>.Publisher { $connectionState }
-
+    var connectionState: ConnectionState = .disconnected {
+        didSet {
+            // Note: Explicit delegate calls are made in the methods below to ensure MainActor dispatch
+            // We keep this property for state tracking
+        }
+    }
 
     public weak var obdDelegate: OBDServiceDelegate?
 
@@ -148,6 +150,9 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
             let oldState = connectionState
             connectionState = .disconnected
             OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
+            Task { @MainActor in
+                self.obdDelegate?.connectionStateChanged(state: .disconnected)
+            }
         case .unsupported:
             obdError("Device does not support Bluetooth Low Energy", category: .bluetooth)
         case .unauthorized:
@@ -157,7 +162,9 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         default:
             obdError("Bluetooth in unexpected state: \(central.state.rawValue)", category: .bluetooth)
             connectionState = .error
-            obdDelegate?.connectionStateChanged(state: .error)
+            Task { @MainActor in
+                self.obdDelegate?.connectionStateChanged(state: .error)
+            }
         }
     }
 
@@ -180,7 +187,6 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         let oldState = connectionState
         connectionState = .connecting
         OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
-        
         Task { @MainActor in
             self.obdDelegate?.connectionStateChanged(state: .connecting)
         }
@@ -205,7 +211,6 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         let oldState = connectionState
         connectionState = .error
         OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
-        
         Task { @MainActor in
             self.obdDelegate?.connectionStateChanged(state: .error)
         }
@@ -260,8 +265,6 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         let oldState = connectionState
         connectionState = .connectedToAdapter
         OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
-        
-        // Dispatch delegate call to main queue since it might update UI
         Task { @MainActor in
             self.obdDelegate?.connectionStateChanged(state: .connectedToAdapter)
         }
@@ -344,7 +347,6 @@ class BLEManager: NSObject, CommProtocol, BLEPeripheralManagerDelegate {
         connectionState = .disconnected
         if oldState != connectionState {
             OBDLogger.shared.logConnectionChange(from: oldState, to: connectionState)
-            
             Task { @MainActor in
                 self.obdDelegate?.connectionStateChanged(state: .disconnected)
             }
